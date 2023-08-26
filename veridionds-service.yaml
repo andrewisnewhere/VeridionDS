@@ -1,0 +1,31 @@
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: veridionds-service
+#spec:
+#  selector:
+#    app: veridionds
+#  ports:
+#    - protocol: TCP
+#      port: 80
+#      targetPort: 8080
+#  type: NodePort
+
+######FOR DEBUGGING
+apiVersion: v1
+kind: Service
+metadata:
+  name: veridionds-service
+spec:
+  selector:
+    app: veridionds
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+    - name: debug
+      protocol: TCP
+      port: 5005
+      targetPort: 5005
+  type: NodePort

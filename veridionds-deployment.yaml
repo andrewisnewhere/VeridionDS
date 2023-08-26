@@ -1,0 +1,62 @@
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: veridionds-deployment
+#spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app: veridionds
+#  template:
+#    metadata:
+#      labels:
+#        app: veridionds
+#    spec:
+#      containers:
+#        - name: veridionds
+#          image: veridionds:3.1.2
+#          ports:
+#            - containerPort: 8080
+#          resources:
+#            requests:
+#              memory: "1Gi"
+#              cpu: "1"
+#            limits:
+#              memory: "2Gi"
+#              cpu: "2"
+#          env:
+#            - name: SPRING_CONFIG_LOCATION
+#              value: /app/application.properties
+#
+
+##### FOR DEBUGGING PURPOSES
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: veridionds-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: veridionds
+  template:
+    metadata:
+      labels:
+        app: veridionds
+    spec:
+      containers:
+        - name: veridionds
+          image: veridionds:3.1.2
+          ports:
+            - containerPort: 8080
+            - containerPort: 5005  # Debug port
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "1"
+            limits:
+              memory: "2Gi"
+              cpu: "2"
+          env:
+            - name: SPRING_CONFIG_LOCATION
+              value: /app/application.properties

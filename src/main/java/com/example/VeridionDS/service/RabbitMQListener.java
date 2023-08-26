@@ -13,14 +13,12 @@ public class RabbitMQListener {
     // to the RabbitMQ queue and then delegates the actual processing
 // of the URL to RabbitMQService.
     private final WebCrawlerService webCrawlerService;
-    private URLService urlService;
 
     @RabbitListener(queues = "${rabbitmq.queue.name}")
     public void listenForTask(String website) {
         log.info("Received website from RabbitMQ: {}", website);
         try {
             webCrawlerService.handleWebsite(website);
-//            urlService.markAsProcessed(website);
         } catch (Exception e) {
             log.error("Error handling website: {}", website, e);
             // Potentially requeue or handle error in another manner

@@ -15,6 +15,16 @@ public class URLService {
     private static final String VISITED_URL_PREFIX = "visited:";
     private StringRedisTemplate redisTemplate;
 
+//    public boolean shouldProcessURL(final String url){
+//        final String isVisited = redisTemplate.opsForValue().get(url);
+//
+//        if(isVisited == null){
+//            redisTemplate.opsForValue().set(url, "true");
+//            return true;
+//        }
+//        return false;
+//    }
+
     public boolean shouldProcessURL(String url) {
         if (Boolean.FALSE.equals(redisTemplate.opsForSet().isMember("visitedUrls", url))) {
             redisTemplate.opsForSet().add("visitedUrls", url);

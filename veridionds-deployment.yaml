@@ -51,10 +51,10 @@ spec:
             - containerPort: 8080
             - containerPort: 5005  # Debug port
           resources:
-            requests:
+            requests:  # what your container gets as a minimum
               memory: "1Gi"
               cpu: "1"
-            limits:
+            limits:  # the max resources your container can use
               memory: "2Gi"
               cpu: "2"
           env:

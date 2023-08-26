@@ -29,7 +29,6 @@ public class RabbitMQConfig {
         return connectionFactory;
     }
 
-
     @Bean
     public RabbitTemplate rabbitTemplate() {
         return new RabbitTemplate(connectionFactory());
@@ -39,7 +38,6 @@ public class RabbitMQConfig {
     public Queue websiteQueue() {
         return new Queue(queueName);
     }
-
 
     @Bean
     public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {

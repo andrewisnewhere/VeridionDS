@@ -1,6 +1,6 @@
 package com.example.VeridionDS.util;
 
-import static com.example.VeridionDS.util.DomainConverterUtil.formatDomain;
+import static com.example.VeridionDS.util.DomainConverter.formatDomain;
 
 import com.example.VeridionDS.model.Company;
 import com.opencsv.CSVReader;

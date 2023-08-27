@@ -27,10 +27,10 @@ spec:
               value: "user" # Modify as per your requirements
             - name: RABBITMQ_DEFAULT_PASS
               value: "password" # Modify as per your requirements
-          resources:
-            limits:
-              memory: "256Mi"
-              cpu: "500m"
-            requests:
-              memory: "128Mi"
-              cpu: "250m"
+#          resources:
+#            limits:
+#              memory: "256Mi"
+#              cpu: "500m"
+#            requests:
+#              memory: "128Mi"
+#              cpu: "250m"

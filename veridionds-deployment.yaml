@@ -35,7 +35,9 @@ kind: Deployment
 metadata:
   name: veridionds-deployment
 spec:
-  replicas: 6
+  replicas: 10
+  ## 8 - 500 websites - 6:30 min
+  ## 10 - 500 websites - ~5min
   selector:
     matchLabels:
       app: veridionds
@@ -50,13 +52,13 @@ spec:
           ports:
             - containerPort: 8080
             - containerPort: 5005  # Debug port
-          resources:
-            requests:  # what your container gets as a minimum
-              memory: "1Gi"
-              cpu: "1"
-            limits:  # the max resources your container can use
-              memory: "2Gi"
-              cpu: "2"
+#          resources:
+#            requests:  # what your container gets as a minimum
+#              memory: "1Gi"
+#              cpu: "1"
+#            limits:  # the max resources your container can use
+#              memory: "2Gi"
+#              cpu: "2"
           env:
             - name: SPRING_CONFIG_LOCATION
               value: /app/application.properties

@@ -1,20 +1,6 @@
 package com.example.VeridionDS;
 
-import com.example.VeridionDS.controller.CompanyController;
-import com.example.VeridionDS.service.CompanyService;
-import com.example.VeridionDS.model.Company;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
 public class CompanyControllerTests {
 //

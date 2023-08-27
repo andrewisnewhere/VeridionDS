@@ -13,6 +13,8 @@ class HtmlUtilTest {
       "<a class=\"btn\" href=\"/page1#someFragment/\">Page 1 someFragment</a>" +
       "<a class=\"btn\" href=\"/page2/\">Page 2</a>" +
       "<a href=\"http://www.example.com/page3#someFragment\">Fragment</a>" +
+      "<a href=\"//www.example.com/page4#someFragment\">Page 4</a>" +
+      "<a href=\"//www.someOtherDomain.com/page5#someFragment\">Page 5</a>" +
       "<a href=\"#fragment\">Fragment</a>" +
       "<a itemprop=\"telephone\" href=\"tel:4146284474\">(414) 628-4474</a>" +
       "<a class=\"first-child wsite-social-item wsite-social-facebook\" href=\"https://www.facebook.com/zuck/?fref=mentions\"></a>" +

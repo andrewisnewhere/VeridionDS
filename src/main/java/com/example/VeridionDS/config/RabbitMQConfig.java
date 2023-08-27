@@ -15,16 +15,18 @@ public class RabbitMQConfig {
 
     @Value("${spring.rabbitmq.host}")
     private String rabbitMQHost;
-
     @Value("${rabbitmq.queue.name}")
     private String queueName;
+    @Value("${spring.rabbitmq.username}")
+    private String rabbitMQUsername;
+    @Value("${spring.rabbitmq.password}")
+    private String getRabbitMQPass;
 
     @Bean
     public ConnectionFactory connectionFactory() {
         CachingConnectionFactory connectionFactory = new CachingConnectionFactory(rabbitMQHost);
         connectionFactory.setUsername("user");
         connectionFactory.setPassword("password");
-
         return connectionFactory;
     }
 
@@ -43,6 +45,7 @@ public class RabbitMQConfig {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory());
         factory.setPrefetchCount(10);  // Adjust as needed
+        //TODO try different setups
         return factory;
     }
 }

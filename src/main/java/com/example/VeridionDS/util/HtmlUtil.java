@@ -16,6 +16,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -42,10 +43,10 @@ public class HtmlUtil {
                 break;
             }
             String link = StringUtils.removeEnd(linkElement.attr("href"), "/"); //remove trailing slash
+            link = StringUtils.removeStart(link, "//"); // remove front slashes
             link = link.split("#")[0]; //remove fragment from link
             if (!link.isBlank()) {
                 try {
-
                     if (link.startsWith("/") || isSameDomain(website, link)) {
                         String relativePath = link.startsWith("/") ? link : extractRelativePath(link);
                         URL baseUrl = new URL(website);
@@ -74,20 +75,6 @@ public class HtmlUtil {
     private static String extractRelativePath(String url) throws MalformedURLException {
         return (new URL(url)).getPath();
     }
-//
-//  // Method to extract links from a specific class attribute
-//  public static List<String> extractLinksByClass(String htmlContent, String className) {
-//    List<String> links = new ArrayList<>();
-//    Document doc = Jsoup.parse(htmlContent);
-//
-//    Elements linkElements = doc.getElementsByClass(className);
-//    for (Element linkElement : linkElements) {
-//      String link = linkElement.attr("href");
-//      links.add(link);
-//    }
-//
-//    return links;
-//  }
 
     public static boolean isSameDomain(final String rootUrl, final String url) {
         String rootDomainName = extractDomainFromURL(rootUrl);
@@ -115,7 +102,7 @@ public class HtmlUtil {
         for (PhoneNumberMatch match : matches) {
             phoneNumbers.add(match.rawString());
         }
-        //TODO estabilish the need to use the regex verification as it might add some unwanted overhead
+        //TODO establish the need to use the regex verification as it might add some unwanted overhead
         final Pattern pattern = Pattern.compile(PHONE_REGEX);
         final Matcher matcher = pattern.matcher(text);
         while (matcher.find()) {
@@ -224,53 +211,47 @@ public class HtmlUtil {
     }
 
     public static String fetchContentFromUrl(final String targetUrl) throws IOException {
-        final int MAX_RETRIES = 3;
-        int retries = 0;
         URL url = new URL(targetUrl);
 
-        while (retries < MAX_RETRIES) {
-            HttpURLConnection conn = null;
-            try {
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                conn.setConnectTimeout(5000); // set timeout to 5 seconds
-                conn.setReadTimeout(5000);
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000); // set timeout to 5 seconds
+            conn.setReadTimeout(5000);
 
-                int responseCode = conn.getResponseCode();
-                if (responseCode == 404) {
-                    return null;
-                } else if (responseCode != 200) {
-                    throw new IOException("Failed to fetch content. HTTP error code: " + responseCode);
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 404) {
+                return null;
+            } else if (responseCode == 301) {
+                String newUrl = conn.getHeaderField("Location");
+                return isSameDomain(targetUrl, newUrl) ? fetchContentFromUrl(newUrl) : null;
+            } else if (responseCode != 200) {
+                throw new IOException("Failed to fetch content. HTTP error code: " + responseCode);
+            }
+
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                String inputLine;
+                StringBuilder content = new StringBuilder();
+
+                while ((inputLine = in.readLine()) != null) {
+                    content.append(inputLine).append('\n');  // Add newline for original structure
                 }
 
-                try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-                    String inputLine;
-                    StringBuilder content = new StringBuilder();
+                return content.toString().trim(); // Trim in case there's an extra newline at the end
+            }
 
-                    while ((inputLine = in.readLine()) != null) {
-                        content.append(inputLine).append('\n');  // Add newline for original structure
-                    }
-
-                    return content.toString().trim(); // Trim in case there's an extra newline at the end
-                }
-
-            } catch (IOException e) {
-                retries++;
-                log.error("Attempt {} to fetch content from URL {} failed", retries, targetUrl, e);
-
-                if (retries == MAX_RETRIES) {
-                    throw e;
-                }
-            } finally {
-                if (conn != null) {
-                    conn.disconnect();
-                }
+        } catch (UnknownHostException e) {
+            throw e; //the site does not exist
+        } catch (IOException e) {
+            log.error("Attempt to fetch content from URL {} failed", targetUrl, e);
+            throw e;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
             }
         }
-
-        return null; // should not reach here due to the throw in the catch block above
     }
-
 
     public static String extractDomainFromURL(String url) {
         return url.replaceAll("http(s)?://|www\\.|/.*", "");

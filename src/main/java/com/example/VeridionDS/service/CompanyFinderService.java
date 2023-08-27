@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Service
 @AllArgsConstructor
-public class CompanyService {
+public class CompanyFinderService {
     private final CompanyRepo companyRepo;
 
 

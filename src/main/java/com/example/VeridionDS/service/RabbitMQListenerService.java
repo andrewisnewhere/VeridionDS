@@ -15,17 +15,15 @@ public class RabbitMQListenerService {
 
     @RabbitListener(queues = "${rabbitmq.queue.name}")
     public void listenForTask(final String website) {
-        log.info("Just a test8 {}", DateTime.now());
-        log.info("Received website from RabbitMQ: {}", website);
+        log.info("TEST600");
+        boolean hasBeenVisited = urlService.hasUrlBeenVisited(website);
+        log.info("Received website from RabbitMQ {}, which has been been visited: {}", website, hasBeenVisited);
         try {
-            if(urlService.shouldProcessURL(website)) {
+            if(!hasBeenVisited) {
                 webCrawlerService.handleWebsite(website);
-                urlService.markAsProcessed(website);
             }
         } catch (Exception e) {
             log.error("Error handling website: {}", website, e);
-        } finally {
-            log.info("Finally {}", DateTime.now());
         }
     }
 }

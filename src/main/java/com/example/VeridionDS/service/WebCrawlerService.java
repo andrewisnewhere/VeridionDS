@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -32,7 +33,7 @@ public class WebCrawlerService {
     private final RabbitTemplate rabbitTemplate;
     private final CsvUtil csvUtil;
     private final URLService urlService;
-    private Set<String> visitedUrls = Collections.synchronizedSet(new HashSet<>());
+    private final StorageService storageService;
 
     public void crawlWebsitesFromCSV() {
         List<String> websites = csvUtil.readDomainsFromInputStream();
@@ -52,11 +53,14 @@ public class WebCrawlerService {
             //TODO decide if it affects performance and should be deleted
 //            backOffIfNeeded(website);
 
-            if (!canCrawlWebsite(website)) {
-                log.warn("Crawling not allowed for URL: " + website);
-            } else {
-                crawlWebsite(website);
+//            if (!urlService.shouldProcessURL(website) && canCrawlWebsite(website)) {
+            //maybe change || to &&
+            if (!urlService.hasUrlBeenVisited(website) && canCrawlWebsite(website)) {
                 log.info("crawling website: {}", website);
+                urlService.shouldProcessURL(website);
+                crawlWebsite(website);
+            } else {
+                log.warn("Crawling not allowed for URL: " + website);
             }
         } catch (Exception e) {
             log.error("Error crawling website: " + website, e);
@@ -64,12 +68,6 @@ public class WebCrawlerService {
     }
 
     public void crawlWebsite(final String website) {
-        final String normalizedWebsite = urlService.normalizeUrl(website);
-        if (visitedUrls.contains(website) || urlService.hasUrlBeenVisited(normalizedWebsite)) {
-            //TODO ADDED 2nd condition
-            return;
-        }
-
         try {
             final Document initialDocument = Jsoup.connect(website).userAgent("ScrapperBot/1.0 (+https://google.com/ScrapperBot; ScrapperBot@google.com)").get();
             final LinkedHashSet<String> urls = extractLinks(initialDocument, website);
@@ -86,54 +84,11 @@ public class WebCrawlerService {
                     addresses.addAll(extractAddresses(document));
                 }
             }
-            storeData(website, phoneNumbers, socialMediaLinks, addresses);
-            //TODO CHANGE PLACE OF THESE 2
-            visitedUrls.add(website);
-//            urlService.shouldProcessURL(website);
-            urlService.markUrlAsVisited(normalizedWebsite);
+            storageService.storeData(website, phoneNumbers, socialMediaLinks, addresses);
         } catch (IOException e) {
             log.info(e.getMessage());
         }
     }
-
-//    //Todo check if transaction is necessary and if so refactor to a new class and interface
-    @Transactional
-    public void storeData(final String domain, final LinkedHashSet<String> phoneNumbers, final LinkedHashSet<String> socialMediaLinks, final LinkedHashSet<String> addresses) {
-        final Company existingCompany = companyRepo.findByDomain(domain);
-        if (existingCompany != null) {
-            existingCompany.setPhoneNumbers(phoneNumbers);
-            existingCompany.setSocialMediaLinks(socialMediaLinks);
-            existingCompany.setAddresses(addresses);
-            companyRepo.save(existingCompany);
-        } else {
-            log.warn("Warning: Company not found for domain: {}", domain);
-        }
-    }
-//    @Transactional
-//    public void storeData(List<String> domains, List<LinkedHashSet<String>> phoneNumbersList, List<LinkedHashSet<String>> socialMediaLinksList, List<LinkedHashSet<String>> addressesList) {
-//        List<Company> companiesToUpdate = new ArrayList<>();
-//
-//        for (int i = 0; i < domains.size(); i++) {
-//            String domain = domains.get(i);
-//            LinkedHashSet<String> phoneNumbers = phoneNumbersList.get(i);
-//            LinkedHashSet<String> socialMediaLinks = socialMediaLinksList.get(i);
-//            LinkedHashSet<String> addresses = addressesList.get(i);
-//
-//            Company existingCompany = companyRepo.findByDomain(domain);
-//            if (existingCompany != null) {
-//                existingCompany.setPhoneNumbers(phoneNumbers);
-//                existingCompany.setSocialMediaLinks(socialMediaLinks);
-//                existingCompany.setAddresses(addresses);
-//                companiesToUpdate.add(existingCompany);
-//            } else {
-//                log.warn("Warning: Company not found for domain: {}", domain);
-//            }
-//        }
-//
-//    if (!companiesToUpdate.isEmpty()) {
-//        companyRepo.saveAll(companiesToUpdate);
-//    }
-//}
 
     public void backOffIfNeeded(final String website) {
         try {
@@ -153,22 +108,27 @@ public class WebCrawlerService {
         }
     }
 
+    //TODO decide if to keep or remove entirely
     private boolean canCrawlWebsite(final String website) {
-        try {
-            URL url = new URL(website);
-            String robotFileUrl = url.getProtocol() + "://" + url.getHost() + "/robots.txt";
-
-            String robotFileContent = fetchContentFromUrl(robotFileUrl);
-            if (robotFileContent == null || robotFileContent.isEmpty()) {
-                return true; // No robots.txt found, assume that crawling is allowed.
-            }
-
-            BaseRobotRules rules = robotParser.parseContent(url.toString(), robotFileContent.getBytes(), "text/plain", "ScrapperBot/1.0 (+https://google.com/ScrapperBot; ScrapperBot@google.com)");
-            return rules.isAllowed(url.toString()); // Use the crawler-commons logic to decide if the URL is crawlable.
-        } catch (Exception e) {
-            log.error("Error checking robots.txt for website: " + website, e);
-            return false;
-        }
+//        try {
+//            URL url = new URL(website);
+//            String robotFileUrl = url.getProtocol() + "://" + url.getHost() + "/robots.txt";
+//
+//            String robotFileContent = fetchContentFromUrl(robotFileUrl);
+//            if (robotFileContent == null || robotFileContent.isEmpty()) {
+//                return true; // No robots.txt found, assume that crawling is allowed.
+//            }
+//
+//            BaseRobotRules rules = robotParser.parseContent(url.toString(), robotFileContent.getBytes(), "text/plain", "ScrapperBot/1.0 (+https://google.com/ScrapperBot; ScrapperBot@google.com)");
+//            return rules.isAllowed(url.toString()); // Use the crawler-commons logic to decide if the URL is crawlable.
+//        } catch (UnknownHostException e) {
+//            log.error("This site can’t be reached: " + website, e);
+//            return false;
+//        } catch (Exception e) {
+//            log.error("Error checking robots.txt for website: " + website, e);
+//            return true;
+//        }
+        return true;
     }
 
 }

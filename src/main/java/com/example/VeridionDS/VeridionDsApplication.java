@@ -17,11 +17,7 @@ public class VeridionDsApplication {
     @Bean
     public CommandLineRunner initData(ElasticsearchLockService elasticsearchLockService, WebCrawlerService webCrawlerService, CompanyDataService dataService) {
         return args -> {
-            if (elasticsearchLockService.acquireLock("storeInitialData")) {
-                dataService.storeInitialData();
-                elasticsearchLockService.releaseLock("storeInitialData");
-            }
-
+            dataService.storeInitialData();
             webCrawlerService.crawlWebsitesFromCSV();
         };
     }

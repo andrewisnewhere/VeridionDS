@@ -1,6 +1,6 @@
 package com.example.VeridionDS.model;
 
-import com.example.VeridionDS.util.DomainConverterUtil;
+import com.example.VeridionDS.util.DomainConverter;
 import com.opencsv.bean.CsvBindByName;
 import com.opencsv.bean.CsvCustomBindByName;
 import lombok.AllArgsConstructor;
@@ -20,7 +20,7 @@ import java.util.LinkedHashSet;
 public class Company {
     @Id
     private int id;
-    @CsvCustomBindByName(column = "domain", converter = DomainConverterUtil.class)
+    @CsvCustomBindByName(column = "domain", converter = DomainConverter.class)
     private String domain;
     @CsvBindByName(column = "company_commercial_name")
     private String companyCommercialName;

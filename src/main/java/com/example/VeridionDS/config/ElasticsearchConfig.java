@@ -1,4 +1,4 @@
-package com.example.VeridionDS;
+package com.example.VeridionDS.config;
 
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.context.annotation.Bean;
@@ -15,11 +15,10 @@ public class ElasticsearchConfig {
 
     @Bean
     public RestHighLevelClient client() {
-//        HttpHeaders defaultHeaders = new HttpHeaders();
-//        defaultHeaders.add("Accept", "application/vnd.elasticsearch+json;compatible-with=7");
-//        defaultHeaders.add("Content-Type", "application/vnd.elasticsearch+json;compatible-with=7");
-        ClientConfiguration clientConfiguration = ClientConfiguration.builder().connectedTo("elasticsearch-service:9200").build();
-
+        ClientConfiguration clientConfiguration = ClientConfiguration
+                .builder()
+                .connectedTo("elasticsearch-service:9200")
+                .build();
         return RestClients.create(clientConfiguration).rest();
     }
 

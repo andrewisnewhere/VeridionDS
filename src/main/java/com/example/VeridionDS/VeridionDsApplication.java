@@ -1,6 +1,7 @@
 package com.example.VeridionDS;
 
 import com.example.VeridionDS.service.CompanyDataService;
+import com.example.VeridionDS.service.ElasticsearchLockService;
 import com.example.VeridionDS.service.WebCrawlerService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -11,13 +12,16 @@ import org.springframework.context.annotation.Bean;
 public class VeridionDsApplication {
     public static void main(String[] args) {
         SpringApplication.run(VeridionDsApplication.class, args);
-
     }
 
     @Bean
-    public CommandLineRunner initData(WebCrawlerService webCrawlerService, CompanyDataService dataService) {
+    public CommandLineRunner initData(ElasticsearchLockService elasticsearchLockService, WebCrawlerService webCrawlerService, CompanyDataService dataService) {
         return args -> {
-            dataService.storeInitialData();
+            if (elasticsearchLockService.acquireLock("storeInitialData")) {
+                dataService.storeInitialData();
+                elasticsearchLockService.releaseLock("storeInitialData");
+            }
+
             webCrawlerService.crawlWebsitesFromCSV();
         };
     }

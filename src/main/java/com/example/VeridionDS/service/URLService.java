@@ -15,16 +15,6 @@ public class URLService {
     private static final String VISITED_URL_PREFIX = "visited:";
     private StringRedisTemplate redisTemplate;
 
-//    public boolean shouldProcessURL(final String url){
-//        final String isVisited = redisTemplate.opsForValue().get(url);
-//
-//        if(isVisited == null){
-//            redisTemplate.opsForValue().set(url, "true");
-//            return true;
-//        }
-//        return false;
-//    }
-
     public boolean shouldProcessURL(String url) {
         if (Boolean.FALSE.equals(redisTemplate.opsForSet().isMember("visitedUrls", url))) {
             redisTemplate.opsForSet().add("visitedUrls", url);
@@ -49,9 +39,7 @@ public class URLService {
                 scheme = "http";
             }
             if (host == null) {
-                // Handle the case where the host is null.
-                // You might want to log this and return the original URL,
-                // or throw a custom exception.
+                // Handle the case where the host is null. You might want to log this and return the original URL, or throw a custom exception.
                 log.warn("Host is null for URL: {}", url);
                 return url;
             }
@@ -65,18 +53,11 @@ public class URLService {
         }
     }
 
-
-    /**
-     * Use Redis to mark this URL as visited.
-     */
     public void markUrlAsVisited(String url) {
         String normalizedUrl = normalizeUrl(url);
         redisTemplate.opsForValue().set(VISITED_URL_PREFIX + normalizedUrl, "true");
     }
 
-    /**
-     * Check Redis to see if this URL has been visited.
-     */
     public boolean hasUrlBeenVisited(String url) {
         String normalizedUrl = normalizeUrl(url);
         return redisTemplate.opsForValue().get(VISITED_URL_PREFIX + normalizedUrl) != null;

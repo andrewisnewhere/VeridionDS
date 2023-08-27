@@ -13,35 +13,8 @@ import java.util.Optional;
 public class CompanyService {
     private final CompanyRepo companyRepo;
 
-    public Iterable<Company> getCompanies() {
-        return companyRepo.findAll();
-    }
 
-    public Company insertCompany(final Company company) {
-        return companyRepo.save(company);
-    }
-
-    public void deleteAll() {
-        this.companyRepo.deleteAll();
-    }
-
-    // If you want to fetch by domain, you can add:
-    public Company findByDomain(final String domain) {
-        return companyRepo.findByDomain(domain);
-    }
-
-    public Optional<Company> getCompanyById(final int id) {
-        return companyRepo.findById(id);
-    }
-
-    public void saveCompany(final Company updatedCompany) {
-        companyRepo.save(updatedCompany);
-    }
-
-    public void deleteCompanyById(final int id) {
-        companyRepo.deleteById(id);
-    }
-
+    //TODO Handle situatations where the domain or telephone are not in the db
     public Optional<Company> getCompanyByDomainOrPhoneNumber(final String domainOrPhone) {
         Company byDomain = companyRepo.findByDomain(domainOrPhone);
         if (byDomain != null) {
@@ -54,6 +27,31 @@ public class CompanyService {
         }
 
         return Optional.empty();
+    }
+
+    //TODO Delete all of the below
+    public Iterable<Company> getCompanies() {
+        return companyRepo.findAll();
+    }
+
+    public Company insertCompany(final Company company) {
+        return companyRepo.save(company);
+    }
+
+    public void deleteAll() {
+        this.companyRepo.deleteAll();
+    }
+
+    public Optional<Company> getCompanyById(final int id) {
+        return companyRepo.findById(id);
+    }
+
+    public void saveCompany(final Company updatedCompany) {
+        companyRepo.save(updatedCompany);
+    }
+
+    public void deleteCompanyById(final int id) {
+        companyRepo.deleteById(id);
     }
 }
 

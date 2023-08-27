@@ -20,7 +20,7 @@ public class CompanyDataService {
     public void storeInitialData() {
         List<Company> companies = csvUtil.readCompaniesFromCSV();
         for (Company company : companies) {
-            company.setId(getUniqueID()); // Assuming this method generates a unique ID
+            company.setId(getUniqueID());
             companyRepo.save(company);
         }
     }
@@ -35,6 +35,6 @@ public class CompanyDataService {
 
     private int generateRandomId() {
         Random random = new Random();
-        return random.nextInt(1000000);  // Adjust the upper limit as needed
+        return random.nextInt(1000000);
     }
 }

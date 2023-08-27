@@ -25,6 +25,7 @@ public class CompanyController {
         return ResponseEntity.notFound().build();
     }
 
+    //TODO delete all of the below methods
     @GetMapping
     public ResponseEntity<List<Company>> getAllCompanies() {
         List<Company> companies = (List<Company>) companyService.getCompanies();

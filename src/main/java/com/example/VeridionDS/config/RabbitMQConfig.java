@@ -1,4 +1,4 @@
-package com.example.VeridionDS;
+package com.example.VeridionDS.config;
 
 
 import org.springframework.amqp.core.Queue;
@@ -22,7 +22,6 @@ public class RabbitMQConfig {
     @Bean
     public ConnectionFactory connectionFactory() {
         CachingConnectionFactory connectionFactory = new CachingConnectionFactory(rabbitMQHost);
-
         connectionFactory.setUsername("user");
         connectionFactory.setPassword("password");
 

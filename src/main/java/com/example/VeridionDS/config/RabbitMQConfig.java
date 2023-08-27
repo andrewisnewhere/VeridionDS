@@ -1,6 +1,5 @@
 package com.example.VeridionDS.config;
 
-
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -44,8 +43,7 @@ public class RabbitMQConfig {
     public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory());
-        factory.setPrefetchCount(5);  // Adjust as needed
-        //TODO try different setups
+        factory.setPrefetchCount(5);
         return factory;
     }
 }

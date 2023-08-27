@@ -1,20 +1,8 @@
 package com.example.VeridionDS.service;
 
-import static com.example.VeridionDS.util.HtmlUtil.*;
-
-import com.example.VeridionDS.model.Company;
 import com.example.VeridionDS.repository.CompanyRepo;
 import com.example.VeridionDS.util.CsvUtil;
-import crawlercommons.robots.BaseRobotRules;
 import crawlercommons.robots.SimpleRobotRulesParser;
-
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +10,13 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.util.LinkedHashSet;
+import java.util.List;
+
+import static com.example.VeridionDS.util.HtmlUtil.*;
 
 @Service
 @Slf4j
@@ -52,8 +46,8 @@ public class WebCrawlerService {
     public void handleWebsite(String website) {
         try {
             if (!urlService.hasUrlBeenVisited(website) && canCrawlWebsite(website)) {
-              log.info("crawling website: {}", website);
-              crawlWebsite(website);
+                log.info("crawling website: {}", website);
+                crawlWebsite(website);
             } else {
                 log.warn("URL has already been visited or can't be crawled: " + website);
             }
@@ -83,13 +77,14 @@ public class WebCrawlerService {
             }
             storageService.storeData(website, phoneNumbers, socialMediaLinks, addresses);
         } catch (UnknownHostException e) {
-          throw e;
+            throw e;
         } catch (IOException e) {
             log.info(e.getMessage());
         }
     }
 
-    //TODO decide if to keep or remove entirely
+    //this method will check the Robots.txt file if uncommented
+    //currently commented for performance reasons
     private boolean canCrawlWebsite(final String website) throws UnknownHostException {
         urlService.markUrlAsVisited(website);
 //        try {
@@ -109,6 +104,6 @@ public class WebCrawlerService {
 //      log.error("Error checking robots.txt for website: " + website, e);
 //      return true;
 //    }
-      return true;
+        return true;
     }
 }

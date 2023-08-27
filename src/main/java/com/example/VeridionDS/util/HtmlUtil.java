@@ -2,18 +2,6 @@ package com.example.VeridionDS.util;
 
 import com.google.i18n.phonenumbers.PhoneNumberMatch;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,25 +11,35 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class HtmlUtil {
     private static final int MAX_PAGES_PER_WEBSITE = 10;
     private static final String PHONE_REGEX = "\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b";
+    private static final Set<String> socialMediaDomains = new HashSet<>(Arrays.asList("facebook.com", "twitter.com", "linkedin.com", "instagram.com", "pinterest.com", "snapchat.com", "reddit.com", "tumblr.com", "youtube.com", "whatsapp.com", "telegram.org", "tiktok.com"));
+    private static final Set<String> KEYWORDS = new HashSet<>(Arrays.asList("contact", "about", "address", "info", "social", "media", "email", "phone"));
 
-
-    // Method to extract links from HTML content TODO: transactional?
     public static LinkedHashSet<String> extractLinks(final Document document, final String website) {
         LinkedHashSet<String> links = new LinkedHashSet<>();
-//    Elements linkElements = document.select("a[href]");
-        // select anchor tags with an href attribute that does not start with #.
+
+        // select anchor tags with a href attribute that does not start with #.
         Elements linkElements = document.select("a[href]:not([href^=#],[href^=tel],[href^=mailto], [href^=javascript])");
 
-        for (Element linkElement : linkElements) {
+        List<String> prioritizedLinks = getAndPrioritizeLinks(linkElements);
+
+        for (String link : prioritizedLinks) {
             if (links.size() >= MAX_PAGES_PER_WEBSITE) {
                 break;
             }
-            String link = StringUtils.removeEnd(linkElement.attr("href"), "/"); //remove trailing slash
+            link = StringUtils.removeEnd(link, "/"); //remove trailing slash
             link = link.split("#")[0]; //remove fragment from link
             if (link.isBlank()) {
                 continue;
@@ -54,7 +52,6 @@ public class HtmlUtil {
                 if (!isRelativePathUrl(link) && !isSameDomain(website, link)) {
                     continue;
                 }
-
                 if (link.startsWith("www.") || link.startsWith("http") || isRelativePathUrl(link)) {
                     String relativePath = isRelativePathUrl(link) ? link : extractRelativePath(link);
                     URL baseUrl = new URL(website);
@@ -69,21 +66,12 @@ public class HtmlUtil {
                 // Ignore malformed URLs
                 log.error("Invalid URL: " + link, e);
             }
-
         }
-
         return links;
     }
 
     private static boolean isRelativePathUrl(String link) {
         return link.startsWith("/") || !link.contains("/");
-    }
-
-    //Todo check utility
-    private static String extractDomain(String href) {
-        Pattern urlPattern = Pattern.compile("(https?:\\/\\/)?(www\\.)?(m\\.)?([^\\/]+)");
-        Matcher matcher = urlPattern.matcher(href);
-        return matcher.group(4);
     }
 
     private static String extractRelativePath(String url) throws MalformedURLException {
@@ -105,7 +93,6 @@ public class HtmlUtil {
         }
     }
 
-    // todo improve phone number saving by adding a normalization
     public static LinkedHashSet<String> extractPhoneNumbers(final Document document) {
         final LinkedHashSet<String> phoneNumbers = new LinkedHashSet<>();
 
@@ -116,28 +103,22 @@ public class HtmlUtil {
 
         for (PhoneNumberMatch match : matches) {
             phoneNumbers.add(match.rawString());
-            log.debug("***** !!!! PhoneNumberUtil really find a number: " + match);
         }
-        //TODO estabilish the need to use the regex verification as it might add some unwanted overhead
-//        final Pattern pattern = Pattern.compile(PHONE_REGEX);
-//        final Matcher matcher = pattern.matcher(text);
-//        while (matcher.find()) {
-//            phoneNumbers.add(matcher.group());
-//            log.debug("***** !!!! Phone Number found with pattern use: " + matcher.group());
-//        }
+        final Pattern pattern = Pattern.compile(PHONE_REGEX);
+        final Matcher matcher = pattern.matcher(text);
+        while (matcher.find()) {
+            phoneNumbers.add(matcher.group());
+        }
 
-        //TODO the same as above
         Elements phoneElements = document.select("a[href^=tel]");
         for (Element phoneElement : phoneElements) {
             String phoneNumber = phoneElement.attr("href").replace("tel:", "");
             phoneNumbers.add(phoneNumber);
-            log.debug("***** !!!! Phone Number found with phoneElements: " + phoneNumber);
         }
 
         return phoneNumbers;
     }
 
-    //todo check address from https://top-salon-hair-salon.business.site/#testimonials
     public static LinkedHashSet<String> extractAddresses(final Document document) {
         final LinkedHashSet<String> addresses = new LinkedHashSet<>();
 
@@ -159,21 +140,15 @@ public class HtmlUtil {
             }
         }
 
-        // 3. Filter out noisy results
-        List<String> unwantedTerms = Arrays.asList("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December");
-        addresses.removeIf(address -> unwantedTerms.stream().anyMatch(address::contains));
-
         return addresses;
     }
 
-    //todo check why not linkedin for https://garrettwietholter.com/
     public static LinkedHashSet<String> extractSocialMediaLinks(final Document document) {
-        final Set<String> socialMediaDomains = new HashSet<>(Arrays.asList("facebook.com", "twitter.com", "linkedin.com", "instagram.com", "pinterest.com", "snapchat.com", "reddit.com", "tumblr.com", "youtube.com", "whatsapp.com", "telegram.org", "tiktok.com"));
         final LinkedHashSet<String> socialMediaLinks = new LinkedHashSet<>();
         final Set<String> seenBaseUrls = new HashSet<>();
 
-        // select anchor tags with an href attribute that does not start with #.
-        final Elements links = document.select("a[href]:not([href^=#])");
+        // select anchor tags with a href attribute that does not start with #, tel, mailto or javascript
+        final Elements links = document.select("a[href]:not([href^=#],[href^=tel],[href^=mailto],[href^=javascript])");
 
         Pattern urlPattern = Pattern.compile("(https?:\\/\\/)?(www\\.)?(m\\.)?([^\\/]+)");
 
@@ -195,51 +170,24 @@ public class HtmlUtil {
         return socialMediaLinks;
     }
 
-    public static String fetchContentFromUrl(final String targetUrl) throws IOException {
-        URL url = new URL(targetUrl);
-
-        HttpURLConnection conn = null;
-        try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(5000); // set timeout to 5 seconds
-            conn.setReadTimeout(5000);
-
-            int responseCode = conn.getResponseCode();
-            if (responseCode == 404 || responseCode == 403) {
-                return null;
-            } else if (responseCode == 301) {
-                String newUrl = conn.getHeaderField("Location");
-                return isSameDomain(targetUrl, newUrl) ? fetchContentFromUrl(newUrl) : null;
-            } else if (responseCode != 200) {
-                throw new IOException("Failed to fetch content. HTTP error code: " + responseCode);
-            }
-
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-                String inputLine;
-                StringBuilder content = new StringBuilder();
-
-                while ((inputLine = in.readLine()) != null) {
-                    content.append(inputLine).append('\n');  // Add newline for original structure
-                }
-
-                return content.toString().trim(); // Trim in case there's an extra newline at the end
-            }
-
-        } catch (UnknownHostException e) {
-            throw e; //the site does not exist
-        } catch (IOException e) {
-            log.error("Attempt to fetch content from URL {} failed", targetUrl, e);
-            throw e;
-        } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
-        }
+    public static String extractDomainFromURL(String url) {
+        return url.replaceAll("http(s)?://|www\\.|m\\.|/.*", "");
     }
 
-    public static String extractDomainFromURL(String url) {
-        return url.replaceAll("http(s)?://|www\\.|/.*", "");
+    private static List<String> getAndPrioritizeLinks(Elements linkElements) {
+        Set<String> linksSet = linkElements.stream().map(element -> element.attr("href")).collect(Collectors.toSet());
+
+        List<String> links = new ArrayList<>(linksSet);
+
+        Comparator<String> comparator = (link1, link2) -> {
+            int score1 = (int) KEYWORDS.stream().filter(link1::contains).count();
+            int score2 = (int) KEYWORDS.stream().filter(link2::contains).count();
+            return score2 - score1;
+        };
+
+        links.sort(comparator);
+
+        return links;
     }
 
 }

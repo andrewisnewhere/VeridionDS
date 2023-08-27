@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface CompanyRepo extends ElasticsearchRepository<Company, Integer> {
     Company findByDomain(String domain);
-    List<Company> findByDomainIs(String domain);
-    List<Company> findByPhoneNumbersContaining(String phoneNumber);
+
+    List<Company> findByPhoneNumbers(String phoneNumber);
 }

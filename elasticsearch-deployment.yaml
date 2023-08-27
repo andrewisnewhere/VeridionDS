@@ -22,13 +22,6 @@ spec:
               value: single-node
             - name: ES_JAVA_OPTS
               value: "-Xms512m -Xmx512m"
-#          resources:
-#            requests:
-#              cpu: "500m"
-#              memory: "2Gi"
-#            limits:
-#              cpu: "1"
-#              memory: "3Gi"
           ports:
             - containerPort: 9200
               name: es-http

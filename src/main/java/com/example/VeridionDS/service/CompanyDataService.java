@@ -24,15 +24,10 @@ public class CompanyDataService {
             companyRepo.save(company);
         }
     }
+
+    // Assigns a deterministic ID to each company, so that the same company will always have the same ID.
     private String computeId(Company company) {
         return DigestUtils.md5Hex(company.getDomain());
     }
-// assign a deterministic ID to each company,
-// so that the same company will always have the same ID.
-// For example, you could compute the hash of the company's
-// name and use that as the ID. This way, even if storeInitialData
-// is called multiple times, the same company will always have
-// the same ID, and Elasticsearch will simply update the existing
-// document instead of creating a new one
 }
 

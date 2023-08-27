@@ -14,6 +14,8 @@ kubectl delete service rabbitmq-service
 kubectl delete deployment redis-deployment
 kubectl delete service redis-service
 
+#Delete manually the containers and images (in Docker Desktop for the tools used by me)
+
 # New deploy - Step 1
 docker build -t veridionds:3.1.2 .
 kubectl apply -f elasticsearch-deployment.yaml

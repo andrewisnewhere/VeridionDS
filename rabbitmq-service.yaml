@@ -6,14 +6,14 @@ metadata:
     app: rabbitmq
 spec:
   selector:
-    app: rabbitmq # This ensures that the service sends traffic to Pods labeled with "app: rabbitmq".
-  type: ClusterIP # Default type which makes the service only reachable within the cluster.
+    app: rabbitmq
+  type: ClusterIP
   ports:
     - protocol: TCP
       port: 5672
       targetPort: 5672
-      name: amqp # Naming the port helps in identifying its purpose.
+      name: amqp
     - protocol: TCP
       port: 15672
       targetPort: 15672
-      name: management # For the RabbitMQ management UI.
+      name: management

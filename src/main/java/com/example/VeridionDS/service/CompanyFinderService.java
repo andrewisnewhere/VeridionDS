@@ -34,24 +34,8 @@ public class CompanyFinderService {
         return companyRepo.findAll();
     }
 
-    public Company insertCompany(final Company company) {
-        return companyRepo.save(company);
-    }
-
     public void deleteAll() {
         this.companyRepo.deleteAll();
-    }
-
-    public Optional<Company> getCompanyById(final int id) {
-        return companyRepo.findById(id);
-    }
-
-    public void saveCompany(final Company updatedCompany) {
-        companyRepo.save(updatedCompany);
-    }
-
-    public void deleteCompanyById(final int id) {
-        companyRepo.deleteById(id);
     }
 }
 

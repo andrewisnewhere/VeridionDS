@@ -5,10 +5,10 @@ import com.example.VeridionDS.repository.CompanyRepo;
 import com.example.VeridionDS.util.CsvUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Random;
 
 @Service
 @Slf4j
@@ -20,21 +20,19 @@ public class CompanyDataService {
     public void storeInitialData() {
         List<Company> companies = csvUtil.readCompaniesFromCSV();
         for (Company company : companies) {
-            company.setId(getUniqueID());
+            company.setId(computeId(company));
             companyRepo.save(company);
         }
     }
-
-    private int getUniqueID() {
-        int id;
-        do {
-            id = generateRandomId();
-        } while (companyRepo.findById(id).isPresent());
-        return id;
+    private String computeId(Company company) {
+        return DigestUtils.md5Hex(company.getDomain());
     }
-
-    private int generateRandomId() {
-        Random random = new Random();
-        return random.nextInt(1000000);
-    }
+// assign a deterministic ID to each company,
+// so that the same company will always have the same ID.
+// For example, you could compute the hash of the company's
+// name and use that as the ID. This way, even if storeInitialData
+// is called multiple times, the same company will always have
+// the same ID, and Elasticsearch will simply update the existing
+// document instead of creating a new one
 }
+

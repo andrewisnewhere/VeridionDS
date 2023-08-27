@@ -25,8 +25,8 @@ public class RabbitMQConfig {
     @Bean
     public ConnectionFactory connectionFactory() {
         CachingConnectionFactory connectionFactory = new CachingConnectionFactory(rabbitMQHost);
-        connectionFactory.setUsername("user");
-        connectionFactory.setPassword("password");
+        connectionFactory.setUsername(rabbitMQUsername);
+        connectionFactory.setPassword(getRabbitMQPass);
         return connectionFactory;
     }
 
@@ -44,7 +44,7 @@ public class RabbitMQConfig {
     public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory());
-        factory.setPrefetchCount(10);  // Adjust as needed
+        factory.setPrefetchCount(5);  // Adjust as needed
         //TODO try different setups
         return factory;
     }

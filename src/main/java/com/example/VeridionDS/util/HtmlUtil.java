@@ -2,13 +2,6 @@ package com.example.VeridionDS.util;
 
 import com.google.i18n.phonenumbers.PhoneNumberMatch;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,15 +10,21 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Component
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class HtmlUtil {
     private static final int MAX_PAGES_PER_WEBSITE = 10;
     private static final String PHONE_REGEX = "\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b";
@@ -36,33 +35,48 @@ public class HtmlUtil {
         LinkedHashSet<String> links = new LinkedHashSet<>();
 //    Elements linkElements = document.select("a[href]");
         // select anchor tags with an href attribute that does not start with #.
-        Elements linkElements = document.select("a[href]:not([href^=#])");
+        Elements linkElements = document.select("a[href]:not([href^=#],[href^=tel],[href^=mailto], [href^=javascript])");
 
         for (Element linkElement : linkElements) {
             if (links.size() >= MAX_PAGES_PER_WEBSITE) {
                 break;
             }
             String link = StringUtils.removeEnd(linkElement.attr("href"), "/"); //remove trailing slash
-            link = StringUtils.removeStart(link, "//"); // remove front slashes
             link = link.split("#")[0]; //remove fragment from link
-            if (!link.isBlank()) {
-                try {
-                    if (link.startsWith("/") || isSameDomain(website, link)) {
-                        String relativePath = link.startsWith("/") ? link : extractRelativePath(link);
-                        URL baseUrl = new URL(website);
-                        URL resolvedUrl = new URL(baseUrl, relativePath);
+            if (link.isBlank()) {
+                continue;
+            }
+            if (link.startsWith("//")) {
+                link = StringUtils.removeStart(link, "//");
+                link = "http://" + link;
+            }
+            try {
+                if (!isRelativePathUrl(link) && !isSameDomain(website, link)) {
+                    continue;
+                }
 
-                        link = resolvedUrl.toString();
+                if (link.startsWith("www.") || link.startsWith("http") || isRelativePathUrl(link)) {
+                    String relativePath = isRelativePathUrl(link) ? link : extractRelativePath(link);
+                    URL baseUrl = new URL(website);
+                    URL resolvedUrl = new URL(baseUrl, relativePath);
+                    link = resolvedUrl.toString();
+
+                    if (isSameDomain(website, link)) {
                         links.add(link);
                     }
-                } catch (MalformedURLException e) {
-                    // Ignore malformed URLs
-                    log.error("Invalid URL: " + link, e);
                 }
+            } catch (MalformedURLException e) {
+                // Ignore malformed URLs
+                log.error("Invalid URL: " + link, e);
             }
+
         }
 
         return links;
+    }
+
+    private static boolean isRelativePathUrl(String link) {
+        return link.startsWith("/") || !link.contains("/");
     }
 
     //Todo check utility
@@ -91,34 +105,39 @@ public class HtmlUtil {
         }
     }
 
+    // todo improve phone number saving by adding a normalization
     public static LinkedHashSet<String> extractPhoneNumbers(final Document document) {
         final LinkedHashSet<String> phoneNumbers = new LinkedHashSet<>();
 
         PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
         String text = document.text(); // get all the text from the document
 
-        Iterable<PhoneNumberMatch> matches = phoneUtil.findNumbers(text, null);
+        Iterable<PhoneNumberMatch> matches = phoneUtil.findNumbers(text, "US");
 
         for (PhoneNumberMatch match : matches) {
             phoneNumbers.add(match.rawString());
+            log.debug("***** !!!! PhoneNumberUtil really find a number: " + match);
         }
-        //TODO establish the need to use the regex verification as it might add some unwanted overhead
-        final Pattern pattern = Pattern.compile(PHONE_REGEX);
-        final Matcher matcher = pattern.matcher(text);
-        while (matcher.find()) {
-            phoneNumbers.add(matcher.group());
-        }
+        //TODO estabilish the need to use the regex verification as it might add some unwanted overhead
+//        final Pattern pattern = Pattern.compile(PHONE_REGEX);
+//        final Matcher matcher = pattern.matcher(text);
+//        while (matcher.find()) {
+//            phoneNumbers.add(matcher.group());
+//            log.debug("***** !!!! Phone Number found with pattern use: " + matcher.group());
+//        }
 
         //TODO the same as above
         Elements phoneElements = document.select("a[href^=tel]");
         for (Element phoneElement : phoneElements) {
             String phoneNumber = phoneElement.attr("href").replace("tel:", "");
             phoneNumbers.add(phoneNumber);
+            log.debug("***** !!!! Phone Number found with phoneElements: " + phoneNumber);
         }
 
         return phoneNumbers;
     }
 
+    //todo check address from https://top-salon-hair-salon.business.site/#testimonials
     public static LinkedHashSet<String> extractAddresses(final Document document) {
         final LinkedHashSet<String> addresses = new LinkedHashSet<>();
 
@@ -147,48 +166,14 @@ public class HtmlUtil {
         return addresses;
     }
 
-
-    public static LinkedHashSet<String> extractSocialMediaLinks1(final Document document) {
-        final LinkedHashSet<String> socialMediaLinks = new LinkedHashSet<>();
-        final HashSet<String> seenBaseUrls = new HashSet<>();
-
-        final Elements links = document.select("a[href]");
-
-        // List of popular social media platforms (you can expand this list as needed)
-        List<String> socialMediaKeywords = Arrays.asList("facebook.com", "twitter.com", "linkedin.com", "instagram.com", "pinterest.com", "snapchat.com", "reddit.com", "tumblr.com", "youtube.com", "whatsapp.com", "telegram.org", "tiktok.com");
-
-        for (Element link : links) {
-            final String href = link.attr("abs:href"); // Use abs:href to get absolute URLs
-
-            for (String keyword : socialMediaKeywords) {
-                if (href.contains(keyword)) {
-                    // Optional: Filtering based on specific patterns (e.g., ensuring 'profile' is in LinkedIn URLs)
-                    if (keyword.equals("linkedin.com") && !href.contains("/in/")) {
-                        continue;
-                    }
-
-                    // Deduplication: Create a base URL by removing 'www.' and 'm.' (for mobile) prefixes for comparison
-                    String baseUrl = href.replace("https://www.", "").replace("https://m.", "");
-
-                    if (!seenBaseUrls.contains(baseUrl)) {
-                        seenBaseUrls.add(baseUrl);
-                        socialMediaLinks.add(href);
-                    }
-                    break;  // No need to check other keywords for this link
-                }
-            }
-        }
-        return socialMediaLinks;
-    }
-
+    //todo check why not linkedin for https://garrettwietholter.com/
     public static LinkedHashSet<String> extractSocialMediaLinks(final Document document) {
+        final Set<String> socialMediaDomains = new HashSet<>(Arrays.asList("facebook.com", "twitter.com", "linkedin.com", "instagram.com", "pinterest.com", "snapchat.com", "reddit.com", "tumblr.com", "youtube.com", "whatsapp.com", "telegram.org", "tiktok.com"));
         final LinkedHashSet<String> socialMediaLinks = new LinkedHashSet<>();
-        final HashSet<String> seenBaseUrls = new HashSet<>();
+        final Set<String> seenBaseUrls = new HashSet<>();
 
         // select anchor tags with an href attribute that does not start with #.
         final Elements links = document.select("a[href]:not([href^=#])");
-
-        List<String> socialMediaDomains = Arrays.asList("facebook.com", "twitter.com", "linkedin.com", "instagram.com", "pinterest.com", "snapchat.com", "reddit.com", "tumblr.com", "youtube.com", "whatsapp.com", "telegram.org", "tiktok.com");
 
         Pattern urlPattern = Pattern.compile("(https?:\\/\\/)?(www\\.)?(m\\.)?([^\\/]+)");
 
@@ -221,7 +206,7 @@ public class HtmlUtil {
             conn.setReadTimeout(5000);
 
             int responseCode = conn.getResponseCode();
-            if (responseCode == 404) {
+            if (responseCode == 404 || responseCode == 403) {
                 return null;
             } else if (responseCode == 301) {
                 String newUrl = conn.getHeaderField("Location");

@@ -15,7 +15,7 @@ public class RabbitMQListenerService {
 
     @RabbitListener(queues = "${rabbitmq.queue.name}")
     public void listenForTask(final String website) {
-        log.info("TEST600");
+        log.info("TEST14");
         boolean hasBeenVisited = urlService.hasUrlBeenVisited(website);
         log.info("Received website from RabbitMQ {}, which has been been visited: {}", website, hasBeenVisited);
         try {

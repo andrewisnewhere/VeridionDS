@@ -19,7 +19,7 @@ import java.util.LinkedHashSet;
 @NoArgsConstructor
 public class Company {
     @Id
-    private int id;
+    private String id;
     @CsvCustomBindByName(column = "domain", converter = DomainConverter.class)
     private String domain;
     @CsvBindByName(column = "company_commercial_name")

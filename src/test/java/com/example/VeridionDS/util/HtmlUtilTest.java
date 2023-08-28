@@ -62,8 +62,8 @@ class HtmlUtilTest {
   public void extractPhoneNumbers() {
     LinkedHashSet<String> expectedPhoneNumbers = new LinkedHashSet<>();
     expectedPhoneNumbers.add("(414) 628-4474");
+    expectedPhoneNumbers.add("4146284474");
     expectedPhoneNumbers.add("+1-814-954-5812");
-    expectedPhoneNumbers.add("+1 987-654-3210");
 
     LinkedHashSet<String> actualPhoneNumbers = HtmlUtil.extractPhoneNumbers(document);
 

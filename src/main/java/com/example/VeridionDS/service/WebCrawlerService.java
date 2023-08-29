@@ -2,6 +2,7 @@ package com.example.VeridionDS.service;
 
 import com.example.VeridionDS.repository.CompanyRepo;
 import com.example.VeridionDS.util.CsvUtil;
+import crawlercommons.robots.BaseRobotRules;
 import crawlercommons.robots.SimpleRobotRulesParser;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,7 +12,11 @@ import org.jsoup.nodes.Document;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -45,7 +50,7 @@ public class WebCrawlerService {
     // This method will be triggered by a RabbitMQ listener
     public void handleWebsite(String website) {
         try {
-            if (!urlService.hasUrlBeenVisited(website) && canCrawlWebsite(website)) {
+            if (canCrawlWebsite(website)) {
                 log.info("crawling website: {}", website);
                 crawlWebsite(website);
             } else {
@@ -83,27 +88,68 @@ public class WebCrawlerService {
         }
     }
 
-    //this method will check the Robots.txt file if uncommented
-    //currently commented for performance reasons
     private boolean canCrawlWebsite(final String website) throws UnknownHostException {
         urlService.markUrlAsVisited(website);
-//        try {
-//            URL url = new URL(website);
-//            String robotFileUrl = url.getProtocol() + "://" + url.getHost() + "/robots.txt";
-//
-//            String robotFileContent = fetchContentFromUrl(robotFileUrl);
-//            if (robotFileContent == null || robotFileContent.isEmpty()) {
-//                return true; // No robots.txt found, assume that crawling is allowed.
-//            }
-//
-//      BaseRobotRules rules = robotParser.parseContent(url.toString(), robotFileContent.getBytes(), "text/plain", "ScrapperBot/1.0 (+https://google.com/ScrapperBot; ScrapperBot@google.com)");
-//      return rules.isAllowed(url.toString()); // Use the crawler-commons logic to decide if the URL is crawlable.
-//    } catch (UnknownHostException e) {
-//      throw e;
-//    } catch (Exception e) {
-//      log.error("Error checking robots.txt for website: " + website, e);
-//      return true;
-//    }
-        return true;
+        try {
+            URL url = new URL(website);
+            String robotFileUrl = url.getProtocol() + "://" + url.getHost() + "/robots.txt";
+
+            String robotFileContent = fetchContentFromUrl(robotFileUrl);
+            if (robotFileContent == null || robotFileContent.isEmpty()) {
+                return true; // No robots.txt found, assume that crawling is allowed.
+            }
+
+      BaseRobotRules rules = robotParser.parseContent(url.toString(), robotFileContent.getBytes(), "text/plain", "ScrapperBot/1.0 (+https://google.com/ScrapperBot; ScrapperBot@google.com)");
+      return rules.isAllowed(url.toString()); // Use the crawler-commons logic to decide if the URL is crawlable.
+    } catch (UnknownHostException e) {
+      throw e;
+    } catch (Exception e) {
+      log.error("Error checking robots.txt for website: " + website, e);
+      return true;
+    }
+//        return true; //if the robots.txt check is not enabled
+    }
+    private static String fetchContentFromUrl(final String targetUrl) throws IOException {
+        URL url = new URL(targetUrl);
+
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000); // set timeout to 5 seconds
+            conn.setReadTimeout(5000);
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 404 || responseCode == 403) {
+                return null;
+            } else if (responseCode == 301) {
+                String newUrl = conn.getHeaderField("Location");
+                return isSameDomain(targetUrl, newUrl) ? fetchContentFromUrl(newUrl) : null;
+            } else if (responseCode != 200) {
+                throw new IOException("Failed to fetch content. HTTP error code: " + responseCode);
+            }
+
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                String inputLine;
+                StringBuilder content = new StringBuilder();
+
+                while ((inputLine = in.readLine()) != null) {
+                    content.append(inputLine).append('\n');  // Add newline for original structure
+                }
+
+                return content.toString().trim(); // Trim in case there's an extra newline at the end
+            }
+
+        } catch (UnknownHostException e) {
+            log.error("The site does not exist");
+            throw e; //the site does not exist
+        } catch (IOException e) {
+            log.error("Attempt to fetch content from URL {} failed", targetUrl, e);
+            throw e;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
     }
 }

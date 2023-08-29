@@ -12,7 +12,8 @@ import java.util.regex.Pattern;
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ValidationUtils {
-
+    private static final Pattern DOMAIN_PATTERN = Pattern.compile("^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$");
+    private static final PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.getInstance();
 
     public static boolean isValidDomainOrPhone(String domainOrPhone) {
         if (domainOrPhone == null) {
@@ -30,14 +31,12 @@ public class ValidationUtils {
     }
 
     private static boolean isValidDomain(String domain) {
-        String regex = "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
-        return Pattern.matches(regex, domain);
+        return DOMAIN_PATTERN.matcher(domain).matches();
     }
 
     private static boolean isValidPhoneNumber(String phoneNumber) {
-        PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.getInstance();
         try {
-            Phonenumber.PhoneNumber numberProto = phoneNumberUtil.parse(phoneNumber, "US");
+            Phonenumber.PhoneNumber numberProto = phoneNumberUtil.parse(phoneNumber, null);
             return phoneNumberUtil.isValidNumber(numberProto);
         } catch (NumberParseException e) {
             return false;

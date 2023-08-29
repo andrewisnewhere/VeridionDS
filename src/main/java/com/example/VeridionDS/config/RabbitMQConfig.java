@@ -19,13 +19,13 @@ public class RabbitMQConfig {
     @Value("${spring.rabbitmq.username}")
     private String rabbitMQUsername;
     @Value("${spring.rabbitmq.password}")
-    private String getRabbitMQPass;
+    private String rabbitMQPass;
 
     @Bean
     public ConnectionFactory connectionFactory() {
         CachingConnectionFactory connectionFactory = new CachingConnectionFactory(rabbitMQHost);
         connectionFactory.setUsername(rabbitMQUsername);
-        connectionFactory.setPassword(getRabbitMQPass);
+        connectionFactory.setPassword(rabbitMQPass);
         return connectionFactory;
     }
 

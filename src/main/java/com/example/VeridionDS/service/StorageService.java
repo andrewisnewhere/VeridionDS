@@ -15,16 +15,20 @@ import java.util.LinkedHashSet;
 public class StorageService {
     private final CompanyRepo companyRepo;
 
-    @Transactional
-    public void storeData(String domain, LinkedHashSet<String> phoneNumbers, LinkedHashSet<String> socialMediaLinks, LinkedHashSet<String> addresses) {
+        public void storeData(String domain, LinkedHashSet<String> phoneNumbers, LinkedHashSet<String> socialMediaLinks, LinkedHashSet<String> addresses) {
         final Company existingCompany = companyRepo.findByDomain(domain);
         if (existingCompany != null) {
             existingCompany.setPhoneNumbers(phoneNumbers);
             existingCompany.setSocialMediaLinks(socialMediaLinks);
             existingCompany.setAddresses(addresses);
+
+            long version = existingCompany.getVersion();
+
+            existingCompany.setVersion(version + 1);
+
             companyRepo.save(existingCompany);
         } else {
-            log.warn("Warning: Company not found for domain: {}", domain);
+            log.info("Company not found for domain: {}", domain);
         }
     }
 }

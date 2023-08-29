@@ -2,6 +2,7 @@ package com.example.VeridionDS.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,9 @@ public class RabbitMQListenerService {
             }
         } catch (Exception e) {
             log.error("Error handling website: {}", website, e);
+
+            // this will send the message to the dead-letter queue
+            throw new AmqpRejectAndDontRequeueException(e);
         }
     }
 }

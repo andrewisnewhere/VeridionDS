@@ -23,8 +23,9 @@ import java.util.stream.Collectors;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class HtmlUtil {
     private static final int MAX_PAGES_PER_WEBSITE = 10;
-    private static final String PHONE_REGEX = "\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b";
-    private static final Set<String> socialMediaDomains = new HashSet<>(Arrays.asList("facebook.com", "twitter.com", "linkedin.com", "instagram.com", "pinterest.com", "snapchat.com", "reddit.com", "tumblr.com", "youtube.com", "whatsapp.com", "telegram.org", "tiktok.com"));
+    private static final Pattern PHONE_PATTERN = Pattern.compile("\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b");
+    private static final Pattern ADDRESS_PATTERN = Pattern.compile("\\b\\d+\\s[A-Za-z0-9'.\\-\\s,]+(Avenue|Boulevard|Drive|Lane|Road|Street|Ave|Blvd|Rd|St)\\.?\\s*(\\w+\\s*,)?\\s*\\w+\\s*,\\s*[A-Z]{2}\\s*\\d{5}\\b");
+    private static final Set<String> SOCIAL_MEDIA_DOMAINS = new HashSet<>(Arrays.asList("facebook.com", "twitter.com", "linkedin.com", "instagram.com", "pinterest.com", "snapchat.com", "reddit.com", "tumblr.com", "youtube.com", "whatsapp.com", "telegram.org", "tiktok.com"));
     private static final Set<String> KEYWORDS = new HashSet<>(Arrays.asList("contact", "about", "address", "info", "social", "media", "email", "phone"));
 
     public static LinkedHashSet<String> extractLinks(final Document document, final String website) {
@@ -104,8 +105,8 @@ public class HtmlUtil {
         for (PhoneNumberMatch match : matches) {
             phoneNumbers.add(match.rawString());
         }
-        final Pattern pattern = Pattern.compile(PHONE_REGEX);
-        final Matcher matcher = pattern.matcher(text);
+
+        final Matcher matcher = PHONE_PATTERN.matcher(text);
         while (matcher.find()) {
             phoneNumbers.add(matcher.group());
         }
@@ -129,12 +130,10 @@ public class HtmlUtil {
         }
 
         // 2. Refine the regular expression to be more specific
-        Pattern addressPattern = Pattern.compile("\\b\\d+\\s[A-Za-z0-9'.\\-\\s,]+(Avenue|Boulevard|Drive|Lane|Road|Street|Ave|Blvd|Rd|St)\\.?\\s*(\\w+\\s*,)?\\s*\\w+\\s*,\\s*[A-Z]{2}\\s*\\d{5}\\b");
-
         Elements allElements = document.getAllElements();
         for (Element element : allElements) {
             String text = element.text();
-            Matcher matcher = addressPattern.matcher(text);
+            Matcher matcher = ADDRESS_PATTERN.matcher(text);
             while (matcher.find()) {
                 addresses.add(matcher.group());
             }
@@ -159,7 +158,7 @@ public class HtmlUtil {
             if (matcher.find()) {
                 String domain = matcher.group(4);
 
-                if (socialMediaDomains.contains(domain)) {
+                if (SOCIAL_MEDIA_DOMAINS.contains(domain)) {
                     if (!seenBaseUrls.contains(domain)) {
                         seenBaseUrls.add(domain);
                         socialMediaLinks.add(href);

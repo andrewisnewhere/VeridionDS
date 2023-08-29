@@ -19,10 +19,8 @@ public class CompanyDataService {
 
     public void storeInitialData() {
         List<Company> companies = csvUtil.readCompaniesFromCSV();
-        for (Company company : companies) {
-            company.setId(computeId(company));
-            companyRepo.save(company);
-        }
+        companies.forEach(company -> company.setId(computeId(company)));
+        companyRepo.saveAll(companies);
     }
 
     // Assigns a deterministic ID to each company, so that the same company will always have the same ID.

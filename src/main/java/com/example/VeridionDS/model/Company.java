@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.elasticsearch.annotations.Document;
 
 import java.util.LinkedHashSet;
@@ -31,4 +32,7 @@ public class Company {
     private LinkedHashSet<String> phoneNumbers;
     private LinkedHashSet<String> socialMediaLinks;
     private LinkedHashSet<String> addresses;
+    //added for optimistic locking purposes
+    @Version
+    private Long version;
 }
